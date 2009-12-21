@@ -29,6 +29,7 @@ type YicesIPC = (Maybe Handle, Maybe Handle, Maybe Handle, ProcessHandle)
 -- | To read in the result of the (check) command
 data ResY
   = Sat [ExpY]
+  | Unknown [ExpY]
   | UnSat [Integer]
   | InCon [String]
  deriving Show
@@ -72,7 +73,8 @@ checkY yp@(_, Just hout, _, _) =
      (s:ss) <- hGetOutLines hout
      return $
        case s of
-         "sat"   -> Sat (map parseExpY ss)
+         "sat"    -> Sat (map parseExpY ss)
+         "unknown"-> Unknown (map parseExpY ss)
          "unsat" -> UnSat (map read.words.tail.dropWhile (/=':').head $ ss)
          _       -> InCon (s:ss)
 
