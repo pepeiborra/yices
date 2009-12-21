@@ -1,5 +1,5 @@
 name:                yices
-version:             0.0.0.4
+version:             0.0.0.5
 synopsis:            Haskell programming interface to Yices SMT solver
 description:         Incomplete (no bitvectors) syntax, parser, and inter
                      process communication to Yices from Haskell through pipe.
