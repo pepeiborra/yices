@@ -179,7 +179,7 @@ instance Show CmdY where
   show (DEFTYP tname Nothing) = paren $ "define-type " ++ tname
   show (DEFTYP tname (Just t)) = paren $ "define-type "++ tname ++ " " ++ show t
   show (DEFINE idty Nothing) = paren $ "define " ++ showIdTyp idty
-  show (DEFINE idty (Just e)) = paren $ "define " ++ showIdTyp idty ++ show e
+  show (DEFINE idty (Just e)) = paren $ "define " ++ showIdTyp idty ++ " " ++ show e
   show (ASSERT e) = paren $ "assert " ++ show e
   show (ASSERT_P e Nothing) = paren $ "assert+ " ++ show e
   show (ASSERT_P e (Just w)) = paren $ "assert+ " ++ show e ++ " " ++ show w
