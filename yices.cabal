@@ -23,4 +23,4 @@ exposed-modules:     Math.SMT.Yices.Syntax,
                      Math.SMT.Yices.Parser,
                      Math.SMT.Yices.Pipe
 ghc-options:         -Wall
-
+ghc-prof-options:    -auto-all

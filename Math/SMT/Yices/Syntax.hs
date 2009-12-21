@@ -121,85 +121,94 @@ showBinding ((x,Just t),e) = paren $ showIdTyp(x,t) . space . showsPrec 0 e
 showBinding ((x,Nothing),e) = paren $ showString x . space . showsPrec 0 e
 
 instance Show TypY where
-  showsPrec _ (VarT tname) = showString tname
-  showsPrec _ (SUBTYPE idty e) = paren $ showString "subtype " . showIdTyp idty . space . showsPrec 0 e
-  showsPrec _ (SUBRANGE e1 e2) = paren $ showString "subrange " . showsPrec 0 e1 . space . showsPrec 0 e2
-  showsPrec _ (ARR ts) = paren $ showString "-> " . showListSepBy " " ts
-  showsPrec _ (TUP ts) = paren $ showString "tuple " . showListSepBy " " ts
-  showsPrec _ (REC idtyps) = paren $ showString "record " . showListSepByWith showIdTyp " " idtyps
-  showsPrec _ (DEP idty) = showIdTyp idty
-  showsPrec _ (DATATYPE ctordefs) =
+  showsPrec _ = showTypY
+
+{-# INLINE showTypY #-}
+showTypY (VarT tname) = showString tname
+showTypY (SUBTYPE idty e) = paren $ showString "subtype " . showIdTyp idty . space . showsPrec 0 e
+showTypY (SUBRANGE e1 e2) = paren $ showString "subrange " . showsPrec 0 e1 . space . showsPrec 0 e2
+showTypY (ARR ts) = paren $ showString "-> " . showListSepBy " " ts
+showTypY (TUP ts) = paren $ showString "tuple " . showListSepBy " " ts
+showTypY (REC idtyps) = paren $ showString "record " . showListSepByWith showIdTyp " " idtyps
+showTypY (DEP idty) = showIdTyp idty
+showTypY (DATATYPE ctordefs) =
          paren $ showString "datatype " . showListSepByWith showCtorDef " " ctordefs
-  showsPrec _ (SCALAR tnames) = paren $ showString "scalar " . showStringsSepBy " " tnames
+showTypY (SCALAR tnames) = paren $ showString "scalar " . showStringsSepBy " " tnames
   -- showsPrec _ (BITVECTOR n) = paren $ "bitvector " ++ show n
 
 instance Show ExpY where
-  showsPrec _ (VarE x)     = showString x
-  showsPrec _ (LitB True)  = showString "true"
-  showsPrec _ (LitB False) = showString "false"
-  showsPrec _ (LitI n) = showsPrec 0 n
-  showsPrec _ (LitR r) = showsPrec 0 (numerator r) . showChar '/' . showsPrec 0 (denominator r)
-  showsPrec _ (AND es) = paren (showString "and " . showListSepBy " " es)
-  showsPrec _ (OR es) = paren $ showString "or " . showListSepBy " " es
-  showsPrec _ (NOT e) = paren $ showString "not " . showsPrec 0 e
-  showsPrec _ (e1 :=> e2) = paren $ showString "=> " . showsPrec 0 e1 . space . showsPrec 0 e2
-  showsPrec _ (e1 := e2) = paren $ showString "= " . showsPrec 0 e1 . space . showsPrec 0 e2
-  showsPrec _ (e1 :/= e2) = paren $ showString "/= " . showsPrec 0 e1 . space . showsPrec 0 e2
-  showsPrec _ (e1 :< e2) = paren $ showString "< " . showsPrec 0 e1 . space . showsPrec 0 e2
-  showsPrec _ (e1 :<= e2) = paren $ showString "<= " . showsPrec 0 e1 . space . showsPrec 0 e2
-  showsPrec _ (e1 :> e2) = paren $ showString "> " . showsPrec 0 e1 . space . showsPrec 0 e2
-  showsPrec _ (e1 :>= e2) = paren $ showString ">= " . showsPrec 0 e1 . space . showsPrec 0 e2
-  showsPrec _ (e1 :+: e2) = paren $ showString "+ " . showsPrec 0 e1 . space . showsPrec 0 e2
-  showsPrec _ (e1 :-: e2) = paren $ showString "- " . showsPrec 0 e1 . space . showsPrec 0 e2
-  showsPrec _ (e1 :*: e2) = paren $ showString "* " . showsPrec 0 e1 . space . showsPrec 0 e2
-  showsPrec _ (e1 :/: e2) = paren $ showString "/ " . showsPrec 0 e1 . space . showsPrec 0 e2
-  showsPrec _ (DIV e1 e2) = paren $ showString "div " . showsPrec 0 e1 . space . showsPrec 0 e2
-  showsPrec _ (MOD e1 e2) = paren $ showString "mod " . showsPrec 0 e1 . space . showsPrec 0 e2
-  showsPrec _ (IF eb et ef) = paren $ showString "if " . showListSepBy " " [eb,et,ef]
-  showsPrec _ (ITE eb et ef) = paren $ showString "ite " . showListSepBy " " [eb,et,ef]
-  showsPrec _ (LET bindings e) = paren $ showString "let " . (paren $ showListSepByWith showBinding " " bindings) . space . showsPrec 0 e
+  showsPrec _ = showExpY
+
+{-# INLINE showExpY #-}
+showExpY (VarE x)     = showString x
+showExpY (LitB True)  = showString "true"
+showExpY (LitB False) = showString "false"
+showExpY (LitI n) = showsPrec 0 n
+showExpY (LitR r) = showsPrec 0 (numerator r) . showChar '/' . showsPrec 0 (denominator r)
+showExpY (AND es) = paren (showString "and " . showListSepBy " " es)
+showExpY (OR es) = paren $ showString "or " . showListSepBy " " es
+showExpY (NOT e) = paren $ showString "not " . showsPrec 0 e
+showExpY (e1 :=> e2) = paren $ showString "=> " . showsPrec 0 e1 . space . showsPrec 0 e2
+showExpY (e1 := e2) = paren $ showString "= " . showsPrec 0 e1 . space . showsPrec 0 e2
+showExpY (e1 :/= e2) = paren $ showString "/= " . showsPrec 0 e1 . space . showsPrec 0 e2
+showExpY (e1 :< e2) = paren $ showString "< " . showsPrec 0 e1 . space . showsPrec 0 e2
+showExpY (e1 :<= e2) = paren $ showString "<= " . showsPrec 0 e1 . space . showsPrec 0 e2
+showExpY (e1 :> e2) = paren $ showString "> " . showsPrec 0 e1 . space . showsPrec 0 e2
+showExpY (e1 :>= e2) = paren $ showString ">= " . showsPrec 0 e1 . space . showsPrec 0 e2
+showExpY (e1 :+: e2) = paren $ showString "+ " . showsPrec 0 e1 . space . showsPrec 0 e2
+showExpY (e1 :-: e2) = paren $ showString "- " . showsPrec 0 e1 . space . showsPrec 0 e2
+showExpY (e1 :*: e2) = paren $ showString "* " . showsPrec 0 e1 . space . showsPrec 0 e2
+showExpY (e1 :/: e2) = paren $ showString "/ " . showsPrec 0 e1 . space . showsPrec 0 e2
+showExpY (DIV e1 e2) = paren $ showString "div " . showsPrec 0 e1 . space . showsPrec 0 e2
+showExpY (MOD e1 e2) = paren $ showString "mod " . showsPrec 0 e1 . space . showsPrec 0 e2
+showExpY (IF eb et ef) = paren $ showString "if " . showListSepBy " " [eb,et,ef]
+showExpY (ITE eb et ef) = paren $ showString "ite " . showListSepBy " " [eb,et,ef]
+showExpY (LET bindings e) = paren $ showString "let " . (paren $ showListSepByWith showBinding " " bindings) . space . showsPrec 0 e
   -- quantifires
-  showsPrec _ (FORALL idtyps e) = paren $ showString "forall "
+showExpY (FORALL idtyps e) = paren $ showString "forall "
          . (paren $ showListSepByWith showIdTyp " " idtyps) . space . showsPrec 0 e
-  showsPrec _ (EXISTS idtyps e) = paren $ showString "exists "
+showExpY (EXISTS idtyps e) = paren $ showString "exists "
          . (paren $ showListSepByWith showIdTyp " " idtyps) . space . showsPrec 0 e
   -- functions
-  showsPrec _ (APP e es) = paren $ showListSepBy " " (e:es)
-  showsPrec _ (UPDATE_F e es v) = paren $ showString "update "
+showExpY (APP e es) = paren $ showListSepBy " " (e:es)
+showExpY (UPDATE_F e es v) = paren $ showString "update "
          . showsPrec 0 e . space . (paren $ showListSepBy " " es) . showsPrec 0 v
-  showsPrec _ (LAMBDA idtyps e) = paren $ showString "lambda "
+showExpY (LAMBDA idtyps e) = paren $ showString "lambda "
          . (paren $ showListSepByWith showIdTyp " " idtyps) . showsPrec 0 e
   -- tuples
-  showsPrec _ (MKTUP es) = paren $ showString "mk-tuple " . showListSepBy " " es
-  showsPrec _ (SELECT_T e i) = paren $ showString "select " . showsPrec 0 e . space . showsPrec 0 i
-  showsPrec _ (UPDATE_T e i v) = paren $ showString "update "
+showExpY (MKTUP es) = paren $ showString "mk-tuple " . showListSepBy " " es
+showExpY (SELECT_T e i) = paren $ showString "select " . showsPrec 0 e . space . showsPrec 0 i
+showExpY (UPDATE_T e i v) = paren $ showString "update "
          . showsPrec 0 e . space . showsPrec 0 i . space . showsPrec 0 v
   -- records
-  showsPrec _ (MKREC idvals) = paren $ showString "mk-record " . showListSepByWith showIdVal " " idvals
-  showsPrec _ (SELECT_R e s) = paren $ showString "select " . showsPrec 0 e . space . showString s
-  showsPrec _ (UPDATE_R  e s v) = paren $ showString "update " . showsPrec 0 e . space . showString s . space . showsPrec 0 v
+showExpY (MKREC idvals) = paren $ showString "mk-record " . showListSepByWith showIdVal " " idvals
+showExpY (SELECT_R e s) = paren $ showString "select " . showsPrec 0 e . space . showString s
+showExpY (UPDATE_R  e s v) = paren $ showString "update " . showsPrec 0 e . space . showString s . space . showsPrec 0 v
   -- bitvectors -- TODO
 
 instance Show CmdY where
-  showsPrec _ (DEFTYP tname Nothing) = paren $ showString "define-type " . showString tname
-  showsPrec _ (DEFTYP tname (Just t)) = paren $ showString "define-type ". showString tname . space . showsPrec 0 t
-  showsPrec _ (DEFINE idty Nothing) = paren $ showString "define " . showIdTyp idty
-  showsPrec _ (DEFINE idty (Just e)) = paren $ showString "define " . showIdTyp idty . space . showsPrec 0 e
-  showsPrec _ (ASSERT e) = paren $ showString "assert " . showsPrec 0 e
-  showsPrec _ (ASSERT_P e Nothing) = paren $ showString "assert+ " . showsPrec 0 e
-  showsPrec _ (ASSERT_P e (Just w)) = paren $ showString "assert+ " . showsPrec 0 e . space . showsPrec 0 w
-  showsPrec _ (RETRACT i) = paren $ showString "retract " . showsPrec 0 i
-  showsPrec _ (CHECK) = paren $ showString "check"
-  showsPrec _ (MAXSAT) = paren $ showString "max-sat"
-  showsPrec _ (SETE b) = paren $ showString "set-evidence! " . showsPrec 0 (LitB b)
-  showsPrec _ (SETV k) = paren $ showString "set-verbosity! " . showsPrec 0 k
-  showsPrec _ (SETAO b) = paren $ showString "set-arith-only! " . showsPrec 0 (LitB b)
-  showsPrec _ (PUSH) = paren $ showString "push"
-  showsPrec _ (POP) = paren $ showString "pop"
-  showsPrec _ (ECHO s) = paren $ showString "echo " . showsPrec 0 s -- not exact since Haskell string
-  showsPrec _ (INCLUDE s) = paren $ showString "include " . showsPrec 0 s -- not exact same reason
-  showsPrec _ (RESET) = paren $ showString "reset"
-  showsPrec _ (STATUS) = paren $ showString "status"
-  showsPrec _ (DUMP) = paren $ showString "dump-context"
-  showsPrec _ (EXIT) = paren $ showString "exit"
+  showsPrec _ = showCmdY
+
+{-# INLINE showCmdY #-}
+showCmdY (DEFTYP tname Nothing) = paren $ showString "define-type " . showString tname
+showCmdY (DEFTYP tname (Just t)) = paren $ showString "define-type ". showString tname . space . showsPrec 0 t
+showCmdY (DEFINE idty Nothing) = paren $ showString "define " . showIdTyp idty
+showCmdY (DEFINE idty (Just e)) = paren $ showString "define " . showIdTyp idty . space . showsPrec 0 e
+showCmdY (ASSERT e) = paren $ showString "assert " . showsPrec 0 e
+showCmdY (ASSERT_P e Nothing) = paren $ showString "assert+ " . showsPrec 0 e
+showCmdY (ASSERT_P e (Just w)) = paren $ showString "assert+ " . showsPrec 0 e . space . showsPrec 0 w
+showCmdY (RETRACT i) = paren $ showString "retract " . showsPrec 0 i
+showCmdY (CHECK) = paren $ showString "check"
+showCmdY (MAXSAT) = paren $ showString "max-sat"
+showCmdY (SETE b) = paren $ showString "set-evidence! " . showsPrec 0 (LitB b)
+showCmdY (SETV k) = paren $ showString "set-verbosity! " . showsPrec 0 k
+showCmdY (SETAO b) = paren $ showString "set-arith-only! " . showsPrec 0 (LitB b)
+showCmdY (PUSH) = paren $ showString "push"
+showCmdY (POP) = paren $ showString "pop"
+showCmdY (ECHO s) = paren $ showString "echo " . showsPrec 0 s -- not exact since Haskell string
+showCmdY (INCLUDE s) = paren $ showString "include " . showsPrec 0 s -- not exact same reason
+showCmdY (RESET) = paren $ showString "reset"
+showCmdY (STATUS) = paren $ showString "status"
+showCmdY (DUMP) = paren $ showString "dump-context"
+showCmdY (EXIT) = paren $ showString "exit"
 
