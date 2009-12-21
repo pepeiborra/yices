@@ -1,0 +1,4 @@
+2009-08-04 Ahn, Ki Yung kya@pdx.edu
+	* Math/SMT/Yices/Parser.hs (echo, include): fix obvious parser error
+	* Math/SMT/Yices/Pipe.hs (hGetReadyString, hGetReadyString1): comment
+	out unused definition
