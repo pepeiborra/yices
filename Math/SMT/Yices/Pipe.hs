@@ -71,6 +71,7 @@ checkY :: YicesIPC -> IO ResY
 checkY yp@(_, Just hout, _, _) =
   do runCmdsY yp [ECHO('\n':_BEGIN_OUTPUT), CHECK, ECHO('\n':_END_OUTPUT)]
      (s:ss) <- hGetOutLines hout
+     hPutStrLn stderr s
      return $
        case s of
          "sat"    -> Sat (map parseExpY ss)
@@ -82,9 +83,12 @@ stripYicesPrompt line | yprompt `isPrefixOf` line = drop (length yprompt) line
                       | otherwise                 = line
                       where yprompt = "yices > "
 
-hGetOutLines h = liftM ( filter (not . null) . map stripYicesPrompt .
+hGetOutLines h = do
+  ll <- (hGetLinesWhile (/= _END_OUTPUT) h)
+  mapM_ (hPutStrLn stderr) (filter (not.null) . map stripYicesPrompt . takeWhile (/= _BEGIN_OUTPUT) $ ll)
+  return $ ( filter (not . null) . map stripYicesPrompt .
                          tail . dropWhile (/=_BEGIN_OUTPUT) )
-                       (hGetLinesWhile (/= _END_OUTPUT) h)
+           ll
 
 hGetLinesWhile p h = do line <- hGetLine h
                         if p line
