@@ -13,7 +13,8 @@
  -}
 module Math.SMT.Yices.Pipe (
   YicesIPC, ResY(..), createYicesPipe,
-  runCmdsY', runCmdsY, checkY, exitY, flushY
+  runCmdsY', runCmdsY, checkY, exitY, flushY,
+  quickCheckY, quickCheckY'
  ) where
 
 import Math.SMT.Yices.Syntax
@@ -76,8 +77,30 @@ checkY yp@(_, Just hout, _, _) =
        case s of
          "sat"    -> Sat (map parseExpY ss)
          "unknown"-> Unknown (map parseExpY ss)
+         "unsat"  -> UnSat (map read.words.tail.dropWhile (/=':').head $ ss)
+         _        -> InCon (s:ss)
+
+-- | sends a bunch of commands followed by a check command and reads the resulting model.
+--   This function should be the preferred option when large expressions are involved.
+quickCheckY :: String -> [String] -> [CmdY] -> IO ResY
+quickCheckY yPath yOpts cmds = quickCheckY' yPath yOpts (cmds ++ [CHECK])
+
+-- | sends a bunch of commands and reads the result.
+--   This function is similar to 'quickCheckY' but does not append a check command.
+--   It can be useful if you intend to 
+quickCheckY' :: String -> [String] -> [CmdY] -> IO ResY
+quickCheckY' yPath yOpts cmds = do
+     (code, out, err) <- readProcessWithExitCode yPath ("-e" : yOpts) (unlines $ map show cmds)
+     let (s:ss) = lines out
+     when (not $ null err) $ hPutStrLn stderr err
+     hPutStrLn stderr s
+     return $
+       case s of
+         "sat"    -> Sat (map parseExpY $ filter (not.null) ss)
+         "unknown"-> Unknown (map parseExpY $ filter (not.null) ss)
          "unsat" -> UnSat (map read.words.tail.dropWhile (/=':').head $ ss)
          _       -> InCon (s:ss)
+
 
 stripYicesPrompt line | yprompt `isPrefixOf` line = drop (length yprompt) line
                       | otherwise                 = line
