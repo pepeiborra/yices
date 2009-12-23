@@ -33,7 +33,7 @@ data ResY
   | Unknown [ExpY]
   | UnSat [Integer]
   | InCon [String]
- deriving Show
+  deriving Show
 
 -- | Start yices on a given path with given options.
 -- The first argumnet yPath is the path binary file of yices

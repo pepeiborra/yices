@@ -15,8 +15,12 @@
 module Math.SMT.Yices.Syntax ( TypY(..) , ExpY(..) , CmdY(..) ) where
 
 import Char
+import Data.ByteString.Lazy.Char8 (unpack)
 import List
 import Ratio
+import Text.Show.ByteString
+import Prelude hiding (Show(..))
+import qualified Prelude
 
 -- | yices types
 data TypY
@@ -94,107 +98,120 @@ data CmdY
   | DUMP
   | EXIT
 
-paren s = "("++s++")"
+instance Prelude.Show TypY where show = unpack . show
+instance Prelude.Show ExpY where show = unpack . show
+instance Prelude.Show CmdY where show = unpack . show
 
-showListSepByWith showFun sep = concat . intersperse sep . map showFun
+paren = showpParen True
+space = putAscii ' '
 
-showListSepBy :: (Show a) => String -> [a] -> String
-showListSepBy = showListSepByWith show
+showListSepByWith showFun sep = ignore . sequence . intersperse (putAscii sep) . map showFun
+  where
+    ignore m = m >> return ()
 
-showStringsSepBy = showListSepByWith id
+showListSepBy :: (Show a) => Char -> [a] -> Put
+showListSepBy = showListSepByWith showp
 
-showIdTyp (tname,t) = tname++"::"++show t
+showStringsSepBy = showListSepByWith putAsciiStr
 
-showIdVal (fname,e) = fname++"::"++show e
+showIdTyp (tname,t) = putAsciiStr tname >> putAsciiStr "::" >> showp t
 
-showCtorDef (c,[])    = c
-showCtorDef (c,idtyps) = paren $ c++" "++showListSepByWith showIdTyp " " idtyps
+showIdVal (fname,e) = putAsciiStr fname >> putAsciiStr "::" >> showp e
 
-showBinding ((x,Just t),e) = paren $ showIdTyp(x,t) ++ " " ++ show e
-showBinding ((x,Nothing),e) = paren $ x ++ " " ++ show e
+showCtorDef (c,[])    = putAsciiStr c
+showCtorDef (c,idtyps) = paren $ putAsciiStr c >> space >> showListSepByWith showIdTyp ' ' idtyps
+
+showBinding ((x,Just t),e) = paren $ showIdTyp(x,t) >> space >> showp e
+showBinding ((x,Nothing),e) = paren $ putAsciiStr x >> space >> showp e
 
 instance Show TypY where
-  show (VarT tname) = tname
-  show (SUBTYPE idty e) = paren $ "subtype " ++ showIdTyp idty ++ " " ++ show e
-  show (SUBRANGE e1 e2) = paren $ "subrange " ++ show e1 ++ " " ++ show e2
-  show (ARR ts) = paren $ "-> " ++ showListSepBy " " ts
-  show (TUP ts) = paren $ "tuple " ++ showListSepBy " " ts
-  show (REC idtyps) = paren $ "record " ++ showListSepByWith showIdTyp " " idtyps
-  show (DEP idty) = showIdTyp idty
-  show (DATATYPE ctordefs) =
-         paren $ "datatype " ++ showListSepByWith showCtorDef " " ctordefs
-  show (SCALAR tnames) = paren $ "scalar " ++ showStringsSepBy " " tnames
-  -- show (BITVECTOR n) = paren $ "bitvector " ++ show n
+  showp = showPTyp
+
+showPTyp(VarT tname) = putAsciiStr tname
+showPTyp(SUBTYPE idty e) = paren $ putAsciiStr "subtype " >> showIdTyp idty >> space >> showp e
+showPTyp(SUBRANGE e1 e2) = paren $ putAsciiStr "subrange " >> showp e1 >> space >> showp e2
+showPTyp(ARR ts) = paren $ putAsciiStr "-> " >> showListSepBy ' ' ts
+showPTyp(TUP ts) = paren $ putAsciiStr "tuple " >> showListSepBy ' ' ts
+showPTyp(REC idtyps) = paren $ putAsciiStr "record " >> showListSepByWith showIdTyp ' ' idtyps
+showPTyp(DEP idty) = showIdTyp idty
+showPTyp(DATATYPE ctordefs) =
+         paren $ putAsciiStr "datatype " >> showListSepByWith showCtorDef ' ' ctordefs
+showPTyp(SCALAR tnames) = paren $ putAsciiStr "scalar " >> showStringsSepBy ' ' tnames
+  -- showp (BITVECTOR n) = paren $ "bitvector " ++ show n
 
 instance Show ExpY where
-  show (VarE x) = x
-  show (LitB True) = "true"
-  show (LitB False) = "false"
-  show (LitI n) = show n
-  show (LitR r) = show (numerator r) ++ "/" ++ show (denominator r)
-  show (AND es) = paren $ "and " ++ showListSepBy " " es
-  show (OR es) = paren $ "or " ++ showListSepBy " " es
-  show (NOT e) = paren $ "not " ++ show e
-  show (e1 :=> e2) = paren $ "=> " ++ show e1 ++ " " ++ show e2
-  show (e1 := e2) = paren $ "= " ++ show e1 ++ " " ++ show e2
-  show (e1 :/= e2) = paren $ "/= " ++ show e1 ++ " " ++ show e2
-  show (e1 :< e2) = paren $ "< " ++ show e1 ++ " " ++ show e2
-  show (e1 :<= e2) = paren $ "<= " ++ show e1 ++ " " ++ show e2
-  show (e1 :> e2) = paren $ "> " ++ show e1 ++ " " ++ show e2
-  show (e1 :>= e2) = paren $ ">= " ++ show e1 ++ " " ++ show e2
-  show (e1 :+: e2) = paren $ "+ " ++ show e1 ++ " " ++ show e2
-  show (e1 :-: e2) = paren $ "- " ++ show e1 ++ " " ++ show e2
-  show (e1 :*: e2) = paren $ "* " ++ show e1 ++ " " ++ show e2
-  show (e1 :/: e2) = paren $ "/ " ++ show e1 ++ " " ++ show e2
-  show (DIV e1 e2) = paren $ "div " ++ show e1 ++ " " ++ show e2
-  show (MOD e1 e2) = paren $ "mod " ++ show e1 ++ " " ++ show e2
-  show (IF eb et ef) = paren $ "if " ++ showListSepBy " " [eb,et,ef]
-  show (ITE eb et ef) = paren $ "ite " ++ showListSepBy " " [eb,et,ef]
-  show (LET bindings e) = paren $ "let " ++ (paren $ showListSepByWith showBinding " " bindings) ++ " "++ show e
+  showp = showPExp
+
+showPExp(VarE x) = putAsciiStr x
+showPExp(LitB True) = putAsciiStr "true"
+showPExp(LitB False) = putAsciiStr "false"
+showPExp(LitI n) = showp n
+showPExp(LitR r) = showp (numerator r) >> putAscii '/' >> showp (denominator r)
+showPExp(AND es) = paren $ putAsciiStr "and " >> showListSepBy ' ' es
+showPExp(OR es) = paren $ putAsciiStr "or " >> showListSepBy ' ' es
+showPExp(NOT e) = paren $putAsciiStr "not " >> showp e
+showPExp(e1 :=> e2) = paren $putAsciiStr "=> " >> showp e1 >> space >> showp e2
+showPExp(e1 := e2) = paren $ putAsciiStr "= " >> showp e1 >> space >> showp e2
+showPExp(e1 :/= e2) = paren $ putAsciiStr "/= " >> showp e1 >> space >> showp e2
+showPExp(e1 :< e2) = paren $ putAsciiStr "< " >> showp e1 >> space >> showp e2
+showPExp(e1 :<= e2) = paren $ putAsciiStr "<= " >> showp e1 >> space >> showp e2
+showPExp(e1 :> e2) = paren $ putAsciiStr "> " >> showp e1 >> space >> showp e2
+showPExp(e1 :>= e2) = paren $ putAsciiStr ">= " >> showp e1 >> space >> showp e2
+showPExp(e1 :+: e2) = paren $ putAsciiStr "+ " >> showp e1 >> space >> showp e2
+showPExp(e1 :-: e2) = paren $ putAsciiStr "- " >> showp e1 >> space >> showp e2
+showPExp(e1 :*: e2) = paren $ putAsciiStr "* " >> showp e1 >> space >> showp e2
+showPExp(e1 :/: e2) = paren $ putAsciiStr "/ " >> showp e1 >> space >> showp e2
+showPExp(DIV e1 e2) = paren $ putAsciiStr "div " >> showp e1 >> space >> showp e2
+showPExp(MOD e1 e2) = paren $ putAsciiStr "mod " >> showp e1 >> space >> showp e2
+showPExp(IF eb et ef) = paren $ putAsciiStr "if " >> showListSepBy ' ' [eb,et,ef]
+showPExp(ITE eb et ef) = paren $ putAsciiStr "ite " >> showListSepBy ' ' [eb,et,ef]
+showPExp(LET bindings e) = paren $ putAsciiStr "let " >> (paren $ showListSepByWith showBinding ' ' bindings) >> space >> showp e
   -- quantifires
-  show (FORALL idtyps e) = paren $ "forall "
-         ++ (paren $ showListSepByWith showIdTyp " " idtyps) ++ " " ++ show e
-  show (EXISTS idtyps e) = paren $ "exists "
-         ++ (paren $ showListSepByWith showIdTyp " " idtyps) ++ " " ++ show e
+showPExp(FORALL idtyps e) = paren $ putAsciiStr "forall "
+         >> (paren $ showListSepByWith showIdTyp ' ' idtyps) >> space >> showp e
+showPExp(EXISTS idtyps e) = paren $ putAsciiStr "exists "
+         >> (paren $ showListSepByWith showIdTyp ' ' idtyps) >> space >> showp e
   -- functions
-  show (APP e es) = paren $ showListSepBy " " (e:es)
-  show (UPDATE_F e es v) = paren $ "update "
-         ++ show e ++ " " ++ (paren $ showListSepBy " " es) ++ show v
-  show (LAMBDA idtyps e) = paren $ "lambda "
-         ++ (paren $ showListSepByWith showIdTyp " " idtyps) ++ show e
+showPExp(APP e es) = paren $ showListSepBy ' ' (e:es)
+showPExp(UPDATE_F e es v) = paren $ putAsciiStr "update "
+         >> showp e >> space >> (paren $ showListSepBy ' ' es) >> showp v
+showPExp(LAMBDA idtyps e) = paren $ putAsciiStr "lambda "
+         >> (paren $ showListSepByWith showIdTyp ' ' idtyps) >> showp e
   -- tuples
-  show (MKTUP es) = paren $ "mk-tuple " ++ showListSepBy " " es
-  show (SELECT_T e i) = paren $ "select " ++ show e ++ " " ++ show i
-  show (UPDATE_T e i v) = paren $ "update "
-         ++ show e ++ " " ++ show i ++ " " ++ show v
+showPExp(MKTUP es) = paren $ putAsciiStr "mk-tuple " >> showListSepBy ' ' es
+showPExp(SELECT_T e i) = paren $ putAsciiStr "select " >> showp e >> space >> showp i
+showPExp(UPDATE_T e i v) = paren $ putAsciiStr "update "
+         >> showp e >> space >> showp i >> space >> showp v
   -- records
-  show (MKREC idvals) = paren $ "mk-record "
-         ++ showListSepByWith showIdVal " " idvals
-  show (SELECT_R e s) = paren $ "select " ++ show e ++ " " ++ s
-  show (UPDATE_R  e s v) = paren $ "update "
-         ++ show e ++ " " ++ s ++ " " ++ show v
+showPExp(MKREC idvals) = paren $ putAsciiStr "mk-record "
+         >> showListSepByWith showIdVal ' ' idvals
+showPExp(SELECT_R e s) = paren $ putAsciiStr "select " >> showp e >> space >> putAsciiStr s
+showPExp(UPDATE_R  e s v) = paren $ putAsciiStr "update "
+         >> showp e >> space >> putAsciiStr s >> space >> showp v
   -- bitvectors -- TODO
 
 instance Show CmdY where
-  show (DEFTYP tname Nothing) = paren $ "define-type " ++ tname
-  show (DEFTYP tname (Just t)) = paren $ "define-type "++ tname ++ " " ++ show t
-  show (DEFINE idty Nothing) = paren $ "define " ++ showIdTyp idty
-  show (DEFINE idty (Just e)) = paren $ "define " ++ showIdTyp idty ++ " " ++ show e
-  show (ASSERT e) = paren $ "assert " ++ show e
-  show (ASSERT_P e Nothing) = paren $ "assert+ " ++ show e
-  show (ASSERT_P e (Just w)) = paren $ "assert+ " ++ show e ++ " " ++ show w
-  show (RETRACT i) = paren $ "retract " ++ show i
-  show (CHECK) = paren "check"
-  show (MAXSAT) = paren "max-sat"
-  show (SETE b) = paren $ "set-evidence! " ++ show (LitB b)
-  show (SETV k) = paren $ "set-verbosity! " ++ show k
-  show (SETAO b) = paren $ "set-arith-only! " ++ show (LitB b)
-  show (PUSH) = paren "push"
-  show (POP) = paren "pop"
-  show (ECHO s) = paren $ "echo " ++ show s -- not exact since Haskell string
-  show (INCLUDE s) = paren $ "include " ++ show s -- not exact same reason
-  show (RESET) = paren "reset"
-  show (STATUS) = paren "status"
-  show (DUMP) = paren "dump-context"
-  show (EXIT) = paren "exit"
+  showp = showPCmd
+
+showPCmd(DEFTYP tname Nothing) = paren $ putAsciiStr "define-type " >> putAsciiStr tname
+showPCmd(DEFTYP tname (Just t)) = paren $ putAsciiStr "define-type ">> putAsciiStr tname >> space >> showp t
+showPCmd(DEFINE idty Nothing) = paren $ putAsciiStr "define " >> showIdTyp idty
+showPCmd(DEFINE idty (Just e)) = paren $ putAsciiStr "define " >> showIdTyp idty >> space >> showp e
+showPCmd(ASSERT e) = paren $ putAsciiStr "assert " >> showp e
+showPCmd(ASSERT_P e Nothing) = paren $ putAsciiStr "assert+ " >> showp e
+showPCmd(ASSERT_P e (Just w)) = paren $ putAsciiStr "assert+ " >> showp e >> space >> showp w
+showPCmd(RETRACT i) = paren $ putAsciiStr "retract " >> showp i
+showPCmd(CHECK) = paren $ putAsciiStr "check"
+showPCmd(MAXSAT) = paren $ putAsciiStr "max-sat"
+showPCmd(SETE b) = paren $ putAsciiStr "set-evidence! " >> showp (LitB b)
+showPCmd(SETV k) = paren $ putAsciiStr "set-verbosity! " >> showp k
+showPCmd(SETAO b) = paren $ putAsciiStr "set-arith-only! " >> showp (LitB b)
+showPCmd(PUSH) = paren $ putAsciiStr "push"
+showPCmd(POP) = paren $ putAsciiStr "pop"
+showPCmd(ECHO s) = paren $ putAsciiStr "echo " >> showp s -- not exact since Haskell string
+showPCmd(INCLUDE s) = paren $ putAsciiStr "include " >> showp s -- not exact same reason
+showPCmd(RESET) = paren $ putAsciiStr "reset"
+showPCmd(STATUS) = paren $ putAsciiStr "status"
+showPCmd(DUMP) = paren $ putAsciiStr "dump-context"
+showPCmd(EXIT) = paren $ putAsciiStr "exit"
 

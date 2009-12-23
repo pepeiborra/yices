@@ -18,9 +18,9 @@ build-type:          Simple
 cabal-version:       >=1.2
 extra-source-files:  Main.hs
 data-files:          README, ChangeLog
-build-depends:       base >= 2 && < 6, haskell98, process, parsec
+build-depends:       base >= 2 && < 6, haskell98, process, parsec, bytestring, bytestring-show
 exposed-modules:     Math.SMT.Yices.Syntax,
                      Math.SMT.Yices.Parser,
                      Math.SMT.Yices.Pipe
 ghc-options:         -Wall
-
+ghc-prof-options:    -auto-all
